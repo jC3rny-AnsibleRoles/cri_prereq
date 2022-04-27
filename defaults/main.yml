@@ -1,0 +1,20 @@
+---
+# [ cri_prereq - defaults ]
+
+crictl_runtime_endpoint: "unix:///var/run/containerd/containerd.sock"
+crictl_image_endpoint: "{{ crictl_runtime_endpoint }}"
+crictl_timeout: 2
+crictl_debug: "false"
+crictl_pull_image_on_create: "false"
+crictl_disable_pull_on_run: "false"
+
+
+cri_kernel_modules:
+  - overlay
+  - br_netfilter
+
+
+cri_sysctl_params:
+  - { name: net.ipv4.ip_forward, value: 1 }
+  - { name: net.bridge.bridge-nf-call-iptables, value: 1 }
+  - { name: net.bridge.bridge-nf-call-ip6tables, value: 1 }

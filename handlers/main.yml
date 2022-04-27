@@ -1,0 +1,5 @@
+---
+# [ cri_prereq - handlers ]
+
+- name: Reload systemctl values
+  shell: "sysctl --system"
