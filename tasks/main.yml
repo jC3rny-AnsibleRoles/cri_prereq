@@ -1,15 +1,23 @@
 ---
 # [ cri_prereq - tasks ]
 
-# Set up command-line interface for CRI-compatible container runtimes
-- name: Set up command-line interface for CRI-compatible container runtimes
-  template:
-    src: crictl.yaml.j2
-    dest: /etc/crictl.yaml
-    owner: root
-    group: root
-    mode: 0644 
-  tags: [ check-cri_prereq ]
+# Disable swapping
+- block:
+  - name: Disable swapping
+    mount:
+      name: "{{ item }}"
+      fstype: swap
+      state: absent
+    notify: daemon-reload
+    with_items: [ swap, none ]
+    
+  - shell: swapoff -a
+    notify: daemon-reload
+    when: ansible_swaptotal_mb > 0
+  
+  tags: [ cri_prereq, disable-swap ]
+
+- meta: flush_handlers  
 
 
 # Setup required kernel modules
@@ -31,29 +39,49 @@
     with_items: "{{ cri_kernel_modules }}"
   
   when: cri_kernel_modules != []
-  tags: [ check-cri_prereq ]
+  tags: [ cri_prereq ]
 
 
 # Setup required sysctl params
 - name: Setup required sysctl params
   sysctl:
-    sysctl_file: /etc/sysctl.d/83-cri.conf
+    sysctl_file: /etc/sysctl.d/80-cri.conf
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     state: present
     reload: yes
   with_items: "{{ cri_sysctl_params }}"
   when: cri_sysctl_params != []
-  tags: [ check-cri_prereq ]
+  tags: [ cri_prereq ]
 
 - meta: flush_handlers
+
+
+# Install CRI tools
+- name: Install CRI tools
+  include_tasks:
+    file: "roles/{{ role_name }}/tasks/cri_tools.yml"
+    apply:
+      tags: always
+  when: cri_tools_install | bool
+  tags: [ cri_prereq, install-cri_tools, upgrade-cri_tools ]
+
+
+# Apply CRI tools config template
+- name: Apply CRI tools config template
+  template:
+    src: crictl.yaml.j2
+    dest: /etc/crictl.yaml
+    owner: root
+    group: root
+    mode: 0644
+  when: cri_tools_install | bool
+  tags: [ cri_prereq, apply-cri_crictl_template ]
 
 
 # Notify handlers
-- name: Notify handler - Reload systemctl values
+- name: Notify handler - daemon-reload
   debug: msg="Notify handler"
-  notify: Reload systemctl values
+  notify: daemon-reload
   changed_when: true
-  tags: [ never, notify-handler_reload_systemctl_values, notify-handlers_role_cri_prereq , notify-handlers_all ]
-
-- meta: flush_handlers
+  tags: [ never, notify-handler_daemon_reload, notify-handlers_role_cri_prereq notify-handlers_all  ]

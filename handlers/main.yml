@@ -1,5 +1,6 @@
 ---
 # [ cri_prereq - handlers ]
 
-- name: Reload systemctl values
-  shell: "sysctl --system"
+- name: daemon-reload
+  systemd:
+    daemon_reload: yes

@@ -1,18 +1,20 @@
 ---
 # [ cri_prereq - defaults ]
 
-crictl_runtime_endpoint: "unix:///var/run/containerd/containerd.sock"
-crictl_image_endpoint: "{{ crictl_runtime_endpoint }}"
-crictl_timeout: 2
-crictl_debug: "false"
-crictl_pull_image_on_create: "false"
-crictl_disable_pull_on_run: "false"
+cri_tools_version: ""
+cri_tools_install: yes
+cri_tools_directory: "/usr/local/bin"
 
+cri_crictl_runtime_endpoint: "unix:///var/run/containerd/containerd.sock"
+cri_crictl_image_endpoint: "{{ cri_crictl_runtime_endpoint }}"
+cri_crictl_timeout: 2
+cri_crictl_debug: "false"
+cri_crictl_pull_image_on_create: "false"
+cri_crictl_disable_pull_on_run: "false"
 
 cri_kernel_modules:
   - overlay
   - br_netfilter
-
 
 cri_sysctl_params:
   - { name: net.ipv4.ip_forward, value: 1 }
