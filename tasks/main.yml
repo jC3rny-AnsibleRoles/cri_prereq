@@ -8,11 +8,11 @@
       name: "{{ item }}"
       fstype: swap
       state: absent
-    notify: daemon-reload
+    notify: daemon-reload (cri_prereq)
     with_items: [ swap, none ]
     
   - shell: swapoff -a
-    notify: daemon-reload
+    notify: daemon-reload (cri_prereq)
     when: ansible_swaptotal_mb > 0
   
   tags: [ cri_prereq, disable-swap ]
@@ -62,9 +62,9 @@
   include_tasks:
     file: "roles/{{ role_name }}/tasks/cri_tools.yml"
     apply:
-      tags: always
+      tags: [ always ]
   when: cri_tools_install | bool
-  tags: [ cri_prereq, install-cri_tools, upgrade-cri_tools ]
+  tags: [ cri_prereq, install-cri_tools, upgrade-cri_tools, upgrade-k8s_packages ]
 
 
 # Apply CRI tools config template
@@ -80,8 +80,8 @@
 
 
 # Notify handlers
-- name: Notify handler - daemon-reload
+- name: Notify handler - daemon-reload (cri_prereq)
   debug: msg="Notify handler"
-  notify: daemon-reload
+  notify: daemon-reload (cri_prereq)
   changed_when: true
-  tags: [ never, notify-handler_daemon_reload, notify-handlers_role_cri_prereq notify-handlers_all  ]
+  tags: [ never, notify-handler_cri_prereq_daemon_reload, notify-handlers_role_cri_prereq notify-handlers_all  ]
