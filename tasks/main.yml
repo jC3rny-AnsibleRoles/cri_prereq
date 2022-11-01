@@ -3,63 +3,66 @@
 
 # Disable swapping
 - block:
-  - name: Disable swapping
-    mount:
-      name: "{{ item }}"
-      fstype: swap
-      state: absent
-    notify: daemon-reload (cri_prereq)
-    with_items: [ swap, none ]
-    
-  - shell: swapoff -a
-    notify: daemon-reload (cri_prereq)
-    when: ansible_swaptotal_mb > 0
-  
+    - name: Disable swapping
+      ansible.posix.mount:
+        name: "{{ item }}"
+        fstype: swap
+        state: absent
+      notify: daemon-reload (cri_prereq)
+      with_items: [ swap, none ]
+
+    - ansible.builtin.command: swapoff -a
+      notify: daemon-reload (cri_prereq)
+      when: ansible_swaptotal_mb > 0
+
   tags: [ cri_prereq, disable-swap ]
 
-- meta: flush_handlers  
+- ansible.builtin.meta: flush_handlers
 
 
 # Setup required kernel modules
 - block:
-  - name: Setup required kernel modules
-    blockinfile:
-      path: /etc/modules-load.d/cri.conf
-      backup: yes
-      create: yes
-      state: present
-      block: |
-        # CRI runtime prerequisite
-        {{ item }}
-    with_items: "{{ cri_kernel_modules | join('\n') }}"
+    - name: Setup required kernel modules
+      ansible.builtin.blockinfile:
+        path: /etc/modules-load.d/cri.conf
+        backup: true
+        create: true
+        state: present
+        owner: root
+        group: root
+        mode: "0644"
+        block: |
+          # CRI runtime prerequisite
+          {{ item }}
+      with_items: "{{ cri_kernel_modules | join('\n') }}"
 
-  - modprobe:
-      name: "{{ item }}"
-      state: present
-    with_items: "{{ cri_kernel_modules }}"
-  
+    - community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+      with_items: "{{ cri_kernel_modules }}"
+
   when: cri_kernel_modules != []
   tags: [ cri_prereq ]
 
 
 # Setup required sysctl params
 - name: Setup required sysctl params
-  sysctl:
+  ansible.posix.sysctl:
     sysctl_file: /etc/sysctl.d/80-cri.conf
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     state: present
-    reload: yes
+    reload: true
   with_items: "{{ cri_sysctl_params }}"
   when: cri_sysctl_params != []
   tags: [ cri_prereq ]
 
-- meta: flush_handlers
+- ansible.builtin.meta: flush_handlers
 
 
 # Install CRI tools
 - name: Install CRI tools
-  include_tasks:
+  ansible.builtin.include_tasks:
     file: "roles/{{ role_name }}/tasks/cri_tools.yml"
     apply:
       tags: [ always ]
@@ -69,7 +72,7 @@
 
 # Apply CRI tools config template
 - name: Apply CRI tools config template
-  template:
+  ansible.builtin.template:
     src: crictl.yaml.j2
     dest: /etc/crictl.yaml
     owner: root
@@ -80,7 +83,8 @@
 
 # Notify handlers
 - name: Notify handler - daemon-reload (cri_prereq)
-  debug: msg="Notify handler"
+  ansible.builtin.debug:
+    msg: "Notify handler"
   notify: daemon-reload (cri_prereq)
   changed_when: true
-  tags: [ never, notify-handler_cri_prereq_daemon_reload, notify-handlers_role_cri_prereq notify-handlers_all  ]
+  tags: [ never, notify-handler_cri_prereq_daemon_reload, notify-handlers_role_cri_prereq notify-handlers_all ]

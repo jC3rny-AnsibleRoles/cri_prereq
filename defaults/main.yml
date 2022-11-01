@@ -2,7 +2,7 @@
 # [ cri_prereq - defaults ]
 
 cri_tools_version: ""
-cri_tools_install: yes
+cri_tools_install: true
 cri_tools_directory: "/usr/local/bin"
 
 cri_crictl_runtime_endpoint: "unix:///var/run/containerd/containerd.sock"

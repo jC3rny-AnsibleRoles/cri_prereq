@@ -2,29 +2,30 @@
 # [ cri_prereq - tasks/cri_tools.yml ]
 
 - block:
-  - name: Get CRI tools latest version
-    shell: curl -sSL https://github.com/kubernetes-sigs/cri-tools/releases/latest | grep -o 'href="/kubernetes-sigs/cri-tools/releases/tag/.*" ' | awk -F '/' '{ print substr($NF, 1, length($NF)-2) }'
-    register: cri_tools_latest_version
-    changed_when: no
+    - name: Get CRI tools latest version
+      ansible.builtin.shell: curl -sSL https://github.com/kubernetes-sigs/cri-tools/releases/latest | grep -o 'href="/kubernetes-sigs/cri-tools/releases/tag/.*" ' | awk -F '/' '{ print substr($NF, 1, length($NF)-2) }'
+      register: cri_tools_latest_version
+      changed_when: false
 
-  - set_fact:
-      cri_tools_version: "{{ cri_tools_latest_version.stdout }}"
-  
+    - ansible.builtin.set_fact:
+        cri_tools_version: "{{ cri_tools_latest_version.stdout }}"
+
   when: cri_tools_version == ""
 
 
 # Check CRI tools binary
 - name: Check CRI tools binary
-  stat: path="{{ cri_tools_directory }}/crictl"
+  ansible.builtin.stat:
+    path: "{{ cri_tools_directory }}/crictl"
   register: cri_tools_binary
 
 
 # Download CRI tools
 - name: Download CRI tools
-  unarchive:
+  ansible.builtin.unarchive:
     src: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ cri_tools_version }}/crictl-{{ cri_tools_version }}-linux-{{ k8s_kubernetes_arch }}.tar.gz"
     dest: "{{ cri_tools_directory }}"
-    remote_src: yes
+    remote_src: true
     owner: root
     group: root
   when: not cri_tools_binary.stat.exists or ('upgrade-cri_tools' in ansible_run_tags or 'upgrade-k8s_packages' in ansible_run_tags)
