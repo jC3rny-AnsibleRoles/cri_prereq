@@ -75,7 +75,6 @@
     owner: root
     group: root
     mode: 0644
-  when: cri_tools_install | bool
   tags: [ cri_prereq, apply-cri_crictl_template ]
 
 
